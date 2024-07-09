@@ -1,34 +1,19 @@
 import java.util.Iterator;
+import java.util.Objects;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-import java.util.Spliterators;
-import java.util.Spliterator;
 
 public class MixStreams {
     public static <T> Stream<T> zip(Stream<T> first, Stream<T> second) {
         Iterator<T> firstIterator = first.iterator();
         Iterator<T> secondIterator = second.iterator();
 
-        Iterator<T> zippedIterator = new Iterator<T>() {
-            private boolean switcher = true;
-
-            @Override
-            public boolean hasNext() {
-                return firstIterator.hasNext() && secondIterator.hasNext();
-            }
-
-            @Override
-            public T next() {
-                if (switcher) {
-                    switcher = false;
-                    return firstIterator.next();
-                } else {
-                    switcher = true;
-                    return secondIterator.next();
-                }
-            }
-        };
-
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(zippedIterator, Spliterator.ORDERED), false);
+        return IntStream.iterate(0, i -> i + 1)
+                .takeWhile(i -> firstIterator.hasNext() || secondIterator.hasNext())
+                .mapToObj(i -> Stream.of(
+                        firstIterator.hasNext() ? firstIterator.next() : null,
+                        secondIterator.hasNext() ? secondIterator.next() : null))
+                .flatMap(s -> s)
+                .filter(Objects::nonNull);
     }
 }
